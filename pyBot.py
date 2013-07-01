@@ -7,6 +7,7 @@ import signal
 import re
 
 from bs4 import BeautifulSoup
+from time import sleep
 
 def BI():
     url = "http://www.businessinsider.com"
@@ -120,6 +121,7 @@ while 1:
         for line in sBuff:
             line=string.rstrip(line)
             line=string.split(line)
+            #print(line)
 
             if(line[0]=="PING"):
                 print("Sending pong")
