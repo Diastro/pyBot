@@ -80,84 +80,94 @@ def signal_handler(signal, frame):
     print("ByeBye")
     sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
+def connect():
+    print("Connecting to : %s on port %i" % (HOST, PORT))
+    global s
+    s=socket.socket()
+    s.connect((HOST, PORT))
 
-config = ConfigParser.RawConfigParser()
-config.read('bot.cfg')
+    print("Setting NICK")
+    s.send("NICK %s\r\n" % NICK)
 
-HOST=config.get('Bot', 'host')
-PORT=config.getint('Bot', 'port')
-LOBBY=config.get('Bot', 'lobby')
-NICK=config.get('Bot', 'nick')
-IDENT=config.get('Bot', 'ident')
-REALNAME=config.get('Bot', 'realname')
+    readbuffer=s.recv(1024)
+    sBuff=string.split(readbuffer, "\n")
+    readbuffer=sBuff.pop( )
 
-readbuffer=""
+    for line in sBuff:
+        line=string.rstrip(line)
+        line=string.split(line)
+        if(line[0]=="PING"):
+            s.send("PONG %s\r\n" % line[1])
+            print("Sending initial pong")
 
-print("Connecting to : %s on port %i" % (HOST, PORT))
-s=socket.socket()
-s.connect((HOST, PORT))
+    print("Setting USER")
+    s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
 
-print("Setting NICK")
-s.send("NICK %s\r\n" % NICK)
+    print("Joining: %s" % LOBBY)
+    s.send("JOIN %s\r\n" % LOBBY)
 
-readbuffer=readbuffer+s.recv(1024)
-sBuff=string.split(readbuffer, "\n")
-readbuffer=sBuff.pop( )
+def read_config():
+    config = ConfigParser.RawConfigParser()
+    config.read('bot.cfg')
 
-for line in sBuff:
-    line=string.rstrip(line)
-    line=string.split(line)
-    if(line[0]=="PING"):
-        s.send("PONG %s\r\n" % line[1])
-        print("Sending initial pong")
+    global HOST, PORT, LOBBY, NICK, IDENT, REALNAME
+    HOST=config.get('Bot', 'host')
+    PORT=config.getint('Bot', 'port')
+    LOBBY=config.get('Bot', 'lobby')
+    NICK=config.get('Bot', 'nick')
+    IDENT=config.get('Bot', 'ident')
+    REALNAME=config.get('Bot', 'realname')
 
-print("Setting USER")
-s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
+def get_commands():
+    while 1:
+        try:
+            readbuffer=s.recv(1024)
+            sBuff=string.split(readbuffer, "\n")
+            readbuffer=sBuff.pop( )
 
-print("Joining: %s" % LOBBY)
-s.send("JOIN %s\r\n" % LOBBY)
+            for line in sBuff:
+                line=string.rstrip(line)
+                line=string.split(line)
+                #print(line)
 
-while 1:
-    try:
-        readbuffer=s.recv(1024)
-        sBuff=string.split(readbuffer, "\n")
-        readbuffer=sBuff.pop( )
+                if(line[0]=="PING"):
+                    print("Sending pong")
+                    s.send("PONG %s\r\n" % line[1])
 
-        for line in sBuff:
-            line=string.rstrip(line)
-            line=string.split(line)
-            #print(line)
+                if(line[1]=="PRIVMSG"):
+                    command = line[3]
+                    command = command.replace(":","")
+                    if(command == "~HELP"):
+                        print("Help")
+                        HELP()
 
-            if(line[0]=="PING"):
-                print("Sending pong")
-                s.send("PONG %s\r\n" % line[1])
+                    if(command == "~BI"):
+                        print("BI")
+                        BI()
 
-            if(line[1]=="PRIVMSG"):
-                command = line[3]
-                command = command.replace(":","")
-                if(command == "~HELP"):
-                    print("Help")
-                    HELP()
+                    if(command == "~UD"):
+                        print("UD")
+                        UD()
 
-                if(command == "~BI"):
-                    print("BI")
-                    BI()
+                    if(command == "~UDD"):
+                        print("UDD")
+                        if(line[4] != None):
+                            UDD(' '.join(line[4:]).strip())
+                        else:
+                            s.send("PRIVMSG %s : Non keyword. Try again" % LOBBY)
 
-                if(command == "~UD"):
-                    print("UD")
-                    UD()
+        except SystemExit:
+            sys.exit(0)
 
-                if(command == "~UDD"):
-                    print("UDD")
-                    if(line[4] != None):
-                        UDD(' '.join(line[4:]).strip())
-                    else:
-                        s.send("PRIVMSG %s : Non keyword. Try again" % LOBBY)
+        except:
+            print("Error - ",sys.exc_info()[0], sys.exc_info()[1])
+            s.send("PRIVMSG #step : (eror 0x2381ff64) Look at that pipe, it's broken. Try again.")
 
-    except SystemExit:
-        sys.exit(0)
+def main():   
+    signal.signal(signal.SIGINT, signal_handler)
+    read_config()
+    connect()
+    get_commands()
 
-    except:
-        print("Error - ",sys.exc_info()[0], sys.exc_info()[1])
-        s.send("PRIVMSG #step : (eror 0x2381ff64) Look at that pipe, it's broken. Try again.")
+if __name__=="__main__":
+    main()
