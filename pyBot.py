@@ -5,6 +5,7 @@ import string
 import urllib2
 import signal
 import re
+import ConfigParser
 
 from bs4 import BeautifulSoup
 from time import sleep
@@ -80,15 +81,20 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
-HOST="localhost"
-LOBBY="#step"
-PORT=6667
-NICK="PyPag"
-IDENT="PyPag"
-REALNAME="PyPag"
+
+config = ConfigParser.RawConfigParser()
+config.read('bot.cfg')
+
+HOST=config.get('Bot', 'host')
+PORT=config.getint('Bot', 'port')
+LOBBY=config.get('Bot', 'lobby')
+NICK=config.get('Bot', 'nick')
+IDENT=config.get('Bot', 'ident')
+REALNAME=config.get('Bot', 'realname')
+
 readbuffer=""
 
-print("Connecting to : %s" % HOST)
+print("Connecting to : %s on port %i" % (HOST, PORT))
 s=socket.socket()
 s.connect((HOST, PORT))
 
