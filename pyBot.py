@@ -131,6 +131,7 @@ def read_config():
     PORT=config.getint('Bot', 'port')
     LOBBY=config.get('Bot', 'lobby')
     NICK=config.get('Bot', 'nick')
+    NICKALTER=config.get('Bot', 'nickAlternate')
     IDENT=config.get('Bot', 'ident')
     REALNAME=config.get('Bot', 'realname')
     VERSION=config.get('Bot', 'version')
@@ -152,20 +153,31 @@ def get_commands():
                     s.send("PONG %s\r\n" % line[1])
 
                 if(line[1]=="PRIVMSG"):
+                    # Get command string
                     command = line[3]
                     command = command.replace(":","")
-                    if(command == "~HELP"):
-                        print("Help")
+                    
+                    # Get nickname of user who typed the command
+                    nickname = line[0]
+                    nickname = nickname.replace(":", "")
+                    nickname = nickname[:nickname.find("!")]
+                    
+                    # Get channel or username of chat in which the command was entered
+                    chat = line[2]
+                    
+                    if(command.upper() == "~HELP"):
+                        print("Help command from " + nickname + " in chat with " + chat)
                         HELP()
 
-                    if(command == "~BI"):
-                        print("BI")
+                    if(command.upper() == "~BI"):
+                        print("BI command from " + nickname + " in chat with " + chat)
                         BI()
 
-                    if(command == "~UD"):
-                        print("UD")
+                    if(command.upper() == "~UD"):
+                        print("UD command from " + nickname + " in chat with " + chat)
                         UD()
 
+<<<<<<< HEAD
                     if(command == "~ABOUT"):
                         print("ABOUT")
                         ABOUT()
@@ -173,16 +185,23 @@ def get_commands():
                     if(command == "~UDD"):
                         print("UDD")
                         if(line[4] != None):
+=======
+                    if(command.upper() == "~UDD"):
+                        if(len(line) >= 5):
+                            print("UDD command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
+>>>>>>> e0591095c5b3ffd697ce1c1ad0a113fc01a66fa7
                             UDD(' '.join(line[4:]).strip())
                         else:
-                            s.send("PRIVMSG %s : Non keyword. Try again" % LOBBY)
+                            print("UDD command with no arg from " + nickname + " in chat with " + chat)
+                            s.send("PRIVMSG %s :No keyword entered. Try again\r\n" % chat)
+                            # NOTE: Could simply merge UD and UDD user commands so that if the user puts an argument to ~UD, he gets the definition, and no argument gets a random definition.
 
         except SystemExit:
             sys.exit(0)
 
         except:
-            print("Error - ",sys.exc_info()[0], sys.exc_info()[1])
-            s.send("PRIVMSG #step : (eror 0x2381ff64) Look at that pipe, it's broken. Try again.")
+            print("Error - ", sys.exc_info()[0], sys.exc_info()[1])
+            s.send("PRIVMSG %s :(eror 0x2381ff64) Look at that pipe, it's broken. Try again.\r\n" % LOBBY)
 
 def main():   
     signal.signal(signal.SIGINT, signal_handler)
