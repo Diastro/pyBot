@@ -167,7 +167,7 @@ def get_commands():
                         else:
                             print("UDD command with no arg from " + nickname + " in chat with " + chat)
                             s.send("PRIVMSG %s :No keyword entered. Try again\r\n" % chat)
-                            # NOTE: Could simply merge UD and UDD user commands so that if the user puts an argument to ~UD, he gets definition, and no argument gets a random definition.
+                            # NOTE: Could simply merge UD and UDD user commands so that if the user puts an argument to ~UD, he gets the definition, and no argument gets a random definition.
 
         except SystemExit:
             sys.exit(0)
