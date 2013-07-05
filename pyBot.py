@@ -149,7 +149,7 @@ def connect():
     for line in sBuff:
         line=string.rstrip(line)
         line=string.split(line)
-        print("LINE: " + line[0] + " " + line[1] + " " + line[2] + " " + line[3] + " " + line[4])
+        
         if(line[0]=="PING"):
             s.send("PONG %s\r\n" % line[1])
             print("Sending initial pong")
