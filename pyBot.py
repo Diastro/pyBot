@@ -126,7 +126,7 @@ def read_config():
     config = ConfigParser.RawConfigParser()
     config.read('bot.cfg')
 
-    global HOST, PORT, LOBBY, NICK, IDENT, REALNAME, VERSION
+    global HOST, PORT, LOBBY, NICK, NICKALTER, IDENT, REALNAME, VERSION
     HOST=config.get('Bot', 'host')
     PORT=config.getint('Bot', 'port')
     LOBBY=config.get('Bot', 'lobby')
@@ -177,7 +177,7 @@ def get_commands():
                         print("UD command from " + nickname + " in chat with " + chat)
                         UD()
 
-                    if(command == "~ABOUT"):
+                    if(command.upper() == "~ABOUT"):
                         print("ABOUT")
                         ABOUT()
 
