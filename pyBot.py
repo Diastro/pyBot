@@ -6,6 +6,9 @@ import urllib2
 import signal
 import re
 import ConfigParser
+import os
+import psutil
+import platform
 
 from bs4 import BeautifulSoup
 from time import sleep
@@ -63,6 +66,19 @@ def UDD(keyword):
         definition = definition.strip()
         s.send("PRIVMSG %s :%s : %s\r\n" % (LOBBY, word, definition))
 
+def ABOUT():
+    pid = os.getpid()
+    p = psutil.Process(pid)
+    cpu = p.get_cpu_percent(interval=1.0)
+    mem = p.get_memory_percent()
+    sys = platform.system()
+    #ver = platform.version()
+    layout = platform.machine()
+    s.send("PRIVMSG %s : %s v%s\r\n" % (LOBBY, NICK, VERSION))
+    s.send("PRIVMSG %s : I'm running on %s (%s).\r\n" % (LOBBY, sys, layout))
+    s.send("PRIVMSG %s : Currently using %0.2f%% of the CPU and %0.2f%% of RAM.\r\n" % (LOBBY, cpu, mem))
+
+
 def HELP():
     #BI
     command = "~BI"
@@ -110,7 +126,7 @@ def read_config():
     config = ConfigParser.RawConfigParser()
     config.read('bot.cfg')
 
-    global HOST, PORT, LOBBY, NICK, IDENT, REALNAME
+    global HOST, PORT, LOBBY, NICK, NICKALTER, IDENT, REALNAME, VERSION
     HOST=config.get('Bot', 'host')
     PORT=config.getint('Bot', 'port')
     LOBBY=config.get('Bot', 'lobby')
@@ -118,6 +134,7 @@ def read_config():
     NICKALTER=config.get('Bot', 'nickAlternate')
     IDENT=config.get('Bot', 'ident')
     REALNAME=config.get('Bot', 'realname')
+    VERSION=config.get('Bot', 'version')
 
 def get_commands():
     while 1:
@@ -159,6 +176,10 @@ def get_commands():
                     if(command.upper() == "~UD"):
                         print("UD command from " + nickname + " in chat with " + chat)
                         UD()
+
+                    if(command.upper() == "~ABOUT"):
+                        print("ABOUT")
+                        ABOUT()
 
                     if(command.upper() == "~UDD"):
                         if(len(line) >= 5):
