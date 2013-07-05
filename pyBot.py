@@ -177,19 +177,13 @@ def get_commands():
                         print("UD command from " + nickname + " in chat with " + chat)
                         UD()
 
-<<<<<<< HEAD
                     if(command == "~ABOUT"):
                         print("ABOUT")
                         ABOUT()
 
-                    if(command == "~UDD"):
-                        print("UDD")
-                        if(line[4] != None):
-=======
                     if(command.upper() == "~UDD"):
                         if(len(line) >= 5):
                             print("UDD command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
->>>>>>> e0591095c5b3ffd697ce1c1ad0a113fc01a66fa7
                             UDD(' '.join(line[4:]).strip())
                         else:
                             print("UDD command with no arg from " + nickname + " in chat with " + chat)
