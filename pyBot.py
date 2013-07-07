@@ -9,9 +9,15 @@ import ConfigParser
 import os
 #import psutil
 import platform
+import gdata.youtube # Install gdata and elementtree modules
+import gdata.youtube.service
 
 from bs4 import BeautifulSoup
 from time import sleep
+
+#
+# Command definitions
+#
 
 def BI(keyword):
     chat = str(keyword)
@@ -98,7 +104,7 @@ def HELP(keyword):
 
     #UDD
     command = "~UDD _keyword_"
-    s.send("PRIVMSG %s : Returns the Urban Dictionnary Definition of a specific word. %s\r\n" % (chat, command))
+    s.send("PRIVMSG %s : Returns the Urban Dictionary Definition of a specific word. %s\r\n" % (chat, command))
 
     #JOIN
     command = "~JOIN"
@@ -124,6 +130,50 @@ def PART(keyword): # Join a channel
     if(str(keyword)!=LOBBY):
         print("Parting: %s" % keyword)
         s.send("PART %s\r\n" % keyword)
+
+def YOUTUBE(fullLine, nickname, chat):
+    print("Youtube reference from " + nickname + " in chat with " + chat)
+    
+    # Get starting position of the video ID
+    youtubeRefPos = string.find(fullLine, "youtu.be/") # youtu.be/videoID
+    if(youtubeRefPos != -1): # Found youtu.be/ link
+        youtubeRefPos = youtubeRefPos + 9 # Get ID after the /
+    else:
+        youtubeRefPos = string.find(fullLine, "watch?v=") # youtube.com/watch?v=videoID&potential_other=stuff
+        if(youtubeRefPos != -1): # Found youtube.com/ link
+            youtubeRefPos = youtubeRefPos + 8 # Get ID after the watch?v=
+    
+    if(youtubeRefPos == -1):
+        print("Youtube: couldn't find starting position of video ID. Aborting.")
+        return # If we can't find the starting position of the ID, let's just abort now...
+    
+    # Get ending position of the video ID
+    youtubeEndOfIDPos = string.find(fullLine, " ", youtubeRefPos)
+    youtubeEndOfIDPosAlt = string.find(fullLine, "&", youtubeRefPos)
+    if(youtubeEndOfIDPosAlt == -1): # There is no other information after watch?v=
+        if(youtubeEndOfIDPos == -1):
+            youtubeID = fullLine[youtubeRefPos:] # The eol delimits the video ID
+        else:
+            youtubeID = fullLine[youtubeRefPos:youtubeEndOfIDPos] # A space char delimits the video ID
+    else:
+        youtubeID = fullLine[youtubeRefPos:youtubeEndOfIDPosAlt] # A & char delimits the video ID
+    
+    # Retreive video information on youtube
+    yt_service = gdata.youtube.service.YouTubeService()
+    entry = yt_service.GetYouTubeVideoEntry(video_id=youtubeID)
+    print("Youtube: reference found. Parsing video ID " + youtubeID + ".")
+    
+    # TODO: Error catching to display error message of invalid video ID
+    
+    # Print video information
+    #print("Video title: %s" % entry.media.title.text)
+    #print("Video length: %s" % entry.media.duration.seconds)
+    #print("Video desc: %s" % entry.media.description.text[:75])
+    s.send("PRIVMSG %s :Youtube: [Title] %s [Length] %ss [Desc] %s (...) \r\n" % (chat, entry.media.title.text, entry.media.duration.seconds, entry.media.description.text[:75])) # entry.media.description.text
+
+#
+# Connection definitions
+#
 
 def signal_handler(signal, frame):
     print("ByeBye")
@@ -174,6 +224,98 @@ def connect():
     print("Joining: %s" % LOBBY)
     s.send("JOIN %s\r\n" % LOBBY)
 
+def get_commands():
+    while 1:
+        try:
+            readbuffer=s.recv(1024)
+            sBuff=string.split(readbuffer, "\n")
+            readbuffer=sBuff.pop( )
+
+            for line in sBuff:
+                fullLine = line # Save a copy of the full line for parsing references to things
+                line=string.rstrip(line)
+                line=string.split(line)
+                #print(line)
+
+                if(line[0] == "PING"):
+                    print("Sending pong")
+                    s.send("PONG %s\r\n" % line[1])
+
+                if(line[1] == "PRIVMSG"):
+                    # Get command string
+                    command = line[3]
+                    command = command.replace(":","")
+                    command = command.upper()
+                    
+                    # Get nickname of user who typed the command
+                    nickname = line[0]
+                    nickname = nickname.replace(":", "")
+                    nickname = nickname[:nickname.find("!")]
+                    
+                    # Get channel or username of chat in which the command was entered
+                    chat = line[2]
+                    
+                    if(command == "~HELP"):
+                        print("Help command from " + nickname + " in chat with " + chat)
+                        HELP(chat)
+                        continue
+
+                    if(command == "~BI"):
+                        print("BI command from " + nickname + " in chat with " + chat)
+                        BI(chat)
+                        continue
+
+                    if(command == "~UD"):
+                        print("UD command from " + nickname + " in chat with " + chat)
+                        UD(chat)
+                        continue
+
+                    if(command == "~ABOUT"):
+                        print("ABOUT command from " + nickname + " in chat with " + chat)
+                        ABOUT(chat)
+                        continue
+
+                    if(command == "~UDD"):
+                        if(len(line) >= 5):
+                            print("UDD command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
+                            UDD(' '.join(line[4:]).strip())
+                        else:
+                            print("UDD command with no arg from " + nickname + " in chat with " + chat)
+                            s.send("PRIVMSG %s :No keyword entered. Try again.\r\n" % chat)
+                            # NOTE: Could simply merge UD and UDD user commands so that if the user puts an argument to ~UD, he gets the definition, and no argument gets a random definition.
+                        continue
+                    
+                    if(command == "~JOIN"):
+                        if(len(line) >= 5):
+                            print("JOIN command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
+                            JOIN(' '.join(line[4:]).strip())
+                        else:
+                            print("JOIN command with no arg from " + nickname + " in chat with " + chat)
+                            s.send("PRIVMSG %s :No channel name entered. Try again.\r\n" % chat)
+                        continue
+                    
+                    if(command == "~PART"):
+                        print("PART command from " + nickname + " in chat with " + chat)
+                        PART(chat)
+                        continue
+                    
+                    youtubeURLs = ["youtu.be/", "youtube.com/"]
+                    if any(x in fullLine for x in youtubeURLs):
+                        YOUTUBE(fullLine, nickname, chat)
+                        continue
+        
+        except SystemExit:
+            s.send("QUIT :(error 0xO0p51D13d) System Exit.\r\n")
+            sys.exit(0)
+
+        except:
+            print("Error - ", sys.exc_info()[0], sys.exc_info()[1])
+            s.send("PRIVMSG %s :(error 0x2381ff64) Look at that pipe, it's broken. Try again.\r\n" % LOBBY)
+
+#
+# Main
+#
+
 def read_config():
     config = ConfigParser.RawConfigParser()
     config.read('bot.cfg')
@@ -188,79 +330,6 @@ def read_config():
     REALNAME=config.get('Bot', 'realname')
     VERSION=config.get('Bot', 'version')
 
-def get_commands():
-    while 1:
-        try:
-            readbuffer=s.recv(1024)
-            sBuff=string.split(readbuffer, "\n")
-            readbuffer=sBuff.pop( )
-
-            for line in sBuff:
-                line=string.rstrip(line)
-                line=string.split(line)
-                #print(line)
-
-                if(line[0]=="PING"):
-                    print("Sending pong")
-                    s.send("PONG %s\r\n" % line[1])
-
-                if(line[1]=="PRIVMSG"):
-                    # Get command string
-                    command = line[3]
-                    command = command.replace(":","")
-                    
-                    # Get nickname of user who typed the command
-                    nickname = line[0]
-                    nickname = nickname.replace(":", "")
-                    nickname = nickname[:nickname.find("!")]
-                    
-                    # Get channel or username of chat in which the command was entered
-                    chat = line[2]
-                    
-                    if(command.upper() == "~HELP"):
-                        print("Help command from " + nickname + " in chat with " + chat)
-                        HELP(chat)
-
-                    if(command.upper() == "~BI"):
-                        print("BI command from " + nickname + " in chat with " + chat)
-                        BI(chat)
-
-                    if(command.upper() == "~UD"):
-                        print("UD command from " + nickname + " in chat with " + chat)
-                        UD(chat)
-
-                    if(command.upper() == "~ABOUT"):
-                        print("ABOUT command from " + nickname + " in chat with " + chat)
-                        ABOUT(chat)
-
-                    if(command.upper() == "~UDD"):
-                        if(len(line) >= 5):
-                            print("UDD command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
-                            UDD(' '.join(line[4:]).strip())
-                        else:
-                            print("UDD command with no arg from " + nickname + " in chat with " + chat)
-                            s.send("PRIVMSG %s :No keyword entered. Try again\r\n" % chat)
-                            # NOTE: Could simply merge UD and UDD user commands so that if the user puts an argument to ~UD, he gets the definition, and no argument gets a random definition.
-                    
-                    if(command.upper() == "~JOIN"):
-                        if(len(line) >= 5):
-                            print("JOIN command with arg \"" + line[4] + "\" from " + nickname + " in chat with " + chat)
-                            JOIN(' '.join(line[4:]).strip())
-                        else:
-                            print("JOIN command with no arg from " + nickname + " in chat with " + chat)
-                            s.send("PRIVMSG %s :No channel name entered. Try again\r\n" % chat)
-                    
-                    if(command.upper() == "~PART"):
-                        print("PART command from " + nickname + " in chat with " + chat)
-                        PART(chat)
-        
-        except SystemExit:
-            sys.exit(0)
-
-        except:
-            print("Error - ", sys.exc_info()[0], sys.exc_info()[1])
-            s.send("PRIVMSG %s :(error 0x2381ff64) Look at that pipe, it's broken. Try again.\r\n" % LOBBY)
-
 def main():   
     signal.signal(signal.SIGINT, signal_handler)
     read_config()
@@ -269,3 +338,4 @@ def main():
 
 if __name__=="__main__":
     main()
+	
