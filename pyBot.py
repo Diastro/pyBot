@@ -19,6 +19,19 @@ from time import sleep
 # Command definitions
 #
 
+def REDDIT(keyword):
+    chat = str(keyword)
+    
+    url = "http://www.reddit.com"
+    data = urllib2.urlopen(url).read()
+    bs = BeautifulSoup(data)
+    
+    siteTable = bs.find("div", {"id": "siteTable"})
+    vote = siteTable.find("div", {"class": "score unvoted"})
+    firstArticle = siteTable.div.find("p", {"class": "title"})
+    
+    s.send("PRIVMSG %s :Sujet: %s, votes: %s\n" % (chat, firstArticle.get_text(), vote.get_text()))
+    
 def BI(keyword):
     chat = str(keyword)
     
@@ -299,6 +312,11 @@ def get_commands():
                         PART(chat)
                         continue
                     
+                    if(command == "~REDDIT"):
+                        print("WIKI command from " + nickname + " in chat with " + chat)
+                        REDDIT(chat)
+                        continue
+                        
                     youtubeURLs = ["youtu.be/", "youtube.com/"]
                     if any(x in fullLine for x in youtubeURLs):
                         YOUTUBE(fullLine, nickname, chat)
