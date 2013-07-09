@@ -30,7 +30,7 @@ def REDDIT(keyword):
     vote = siteTable.find("div", {"class": "score unvoted"})
     firstArticle = siteTable.div.find("p", {"class": "title"})
     
-    s.send("PRIVMSG %s :Sujet: %s, votes: %s\n" % (chat, firstArticle.get_text(), vote.get_text()))
+    s.send("PRIVMSG %s :Sujet: %s, votes: %s\r\n" % (chat, firstArticle.get_text(), vote.get_text()))
     
 def BI(keyword):
     chat = str(keyword)
@@ -313,7 +313,7 @@ def get_commands():
                         continue
                     
                     if(command == "~REDDIT"):
-                        print("WIKI command from " + nickname + " in chat with " + chat)
+                        print("REDDIT command from " + nickname + " in chat with " + chat)
                         REDDIT(chat)
                         continue
                         
