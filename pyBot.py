@@ -7,7 +7,7 @@ import signal
 import re
 import ConfigParser
 import os
-#import psutil
+import psutil
 import platform
 import gdata.youtube # Install gdata and elementtree modules
 import gdata.youtube.service
@@ -79,16 +79,16 @@ def UDD(keyword):
 def ABOUT(keyword):
     chat = str(keyword)
     
-    #pid = os.getpid()
-    #p = psutil.Process(pid)
-    #cpu = p.get_cpu_percent(interval=1.0)
-    #mem = p.get_memory_percent()
+    pid = os.getpid()
+    p = psutil.Process(pid)
+    cpu = p.get_cpu_percent(interval=1.0)
+    mem = p.get_memory_percent()
     sys = platform.system()
-    #ver = platform.version()
+    ver = platform.version()
     layout = platform.machine()
     s.send("PRIVMSG %s : %s v%s\r\n" % (chat, NICK, VERSION))
     s.send("PRIVMSG %s : I'm running on %s (%s).\r\n" % (chat, sys, layout))
-    #s.send("PRIVMSG %s : Currently using %0.2f%% of the CPU and %0.2f%% of RAM.\r\n" % (LOBBY, cpu, mem))
+    s.send("PRIVMSG %s : Currently using %0.2f%% of the CPU and %0.2f%% of RAM.\r\n" % (LOBBY, cpu, mem))
 
 
 def HELP(keyword):
